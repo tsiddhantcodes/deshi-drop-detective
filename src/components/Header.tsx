@@ -1,16 +1,17 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/login');
   };
 
@@ -27,14 +28,13 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {isLoggedIn ? (
+          {user ? (
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      <span className="sr-only">User</span>
-                      U
+                      {user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -42,7 +42,7 @@ export default function Header() {
               <PopoverContent className="w-56" align="end" forceMount>
                 <div className="grid gap-1">
                   <div className="flex items-center justify-start gap-2 rounded-md p-2 text-sm">
-                    <span className="text-xs text-muted-foreground">demo@example.com</span>
+                    <span className="text-xs text-muted-foreground">{user.email}</span>
                   </div>
                   <Button variant="ghost" className="justify-start text-sm" onClick={handleLogout}>
                     Log Out
