@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from "react";
+import { fetchGoogleSheetData } from "@/utils/googleSheetsService";
 import ProductCard, { Product } from "./ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface ProductGridProps {
   sheetUrl: string;
@@ -18,22 +19,36 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("highest");
 
-  // Mock data generation
+  // Fetch and process Google Sheet data
   useEffect(() => {
-    const generateMockProducts = () => {
-      const mockProducts: Product[] = [];
-      
-      for (let i = 1; i <= 10; i++) {
-        const totalScore = Math.floor(Math.random() * 100);
-        const status = i <= 2 ? 'analyzing' : 'complete';
-        
-        mockProducts.push({
-          id: `product-${i}`,
-          name: `Indian Product #${i}`,
-          imageUrl: "",
-          productUrl: "https://example.com/product",
-          totalScore,
-          status,
+    const loadProductData = async () => {
+      try {
+        setIsLoading(true);
+        setProgress(0);
+
+        // Simulate progress
+        const progressInterval = setInterval(() => {
+          setProgress(prev => {
+            const newProgress = prev + 5;
+            if (newProgress >= 100) {
+              clearInterval(progressInterval);
+              return 100;
+            }
+            return newProgress;
+          });
+        }, 300);
+
+        // Fetch sheet data
+        const sheetProducts = await fetchGoogleSheetData(sheetUrl);
+
+        // Transform sheet data into Product format
+        const analyzedProducts: Product[] = sheetProducts.map((product, index) => ({
+          id: `product-${index}`,
+          name: `Product ${index + 1}`,
+          imageUrl: "", // You might want to fetch this separately
+          productUrl: product.productLink,
+          totalScore: Math.floor(Math.random() * 100), // Placeholder scoring
+          status: 'analyzing',
           scores: [
             { name: "Trend Status", score: Math.floor(Math.random() * 10) + 1 },
             { name: "Seasonality", score: Math.floor(Math.random() * 10) + 1 },
@@ -46,39 +61,20 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
             { name: "Ad Creative", score: Math.floor(Math.random() * 10) + 1 },
             { name: "Target Clarity", score: Math.floor(Math.random() * 10) + 1 }
           ],
-          insights: "This product shows strong potential for the Indian market with high engagement metrics and good problem-solution fit."
+          insights: "Preliminary analysis in progress."
+        }));
+
+        setProducts(analyzedProducts);
+        setIsLoading(false);
+      } catch (error) {
+        toast.error('Failed to fetch product data', {
+          description: error instanceof Error ? error.message : 'Unknown error'
         });
+        setIsLoading(false);
       }
-      
-      return mockProducts;
     };
-    
-    let progressInterval: NodeJS.Timeout;
-    
-    const loadData = () => {
-      setIsLoading(true);
-      setProgress(0);
-      
-      // Simulate progress updates
-      progressInterval = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = prev + 5;
-          if (newProgress >= 100) {
-            clearInterval(progressInterval);
-            setProducts(generateMockProducts());
-            setIsLoading(false);
-            return 100;
-          }
-          return newProgress;
-        });
-      }, 300);
-    };
-    
-    loadData();
-    
-    return () => {
-      clearInterval(progressInterval);
-    };
+
+    loadProductData();
   }, [sheetUrl]);
 
   // Filtering and sorting logic
