@@ -35,19 +35,23 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
         setError(null);
         setProgress(0);
 
-        // Simulate progress
+        // Simulate initial progress
         const progressInterval = setInterval(() => {
           setProgress(prev => {
-            const newProgress = prev + 5;
-            if (newProgress >= 90) {
+            const newProgress = prev + 2;
+            if (newProgress >= 30) {
               clearInterval(progressInterval);
-              return 90;
+              return 30;
             }
             return newProgress;
           });
-        }, 300);
+        }, 150);
 
-        // Fetch sheet data
+        toast.info("Analyzing products from Google Sheet", {
+          description: "This may take a minute as we analyze the video content."
+        });
+
+        // Fetch sheet data and analyze videos
         const sheetProducts = await fetchGoogleSheetData(sheetUrl);
         
         if (sheetProducts.length === 0) {
@@ -57,32 +61,19 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
           return;
         }
 
-        // Transform sheet data into Product format and generate sample scores
-        // In a real app, you would analyze each product here with AI or other APIs
-        const analyzedProducts: Product[] = sheetProducts.map((product, index) => {
-          // Calculate individual scores (random for now)
-          const scores = [
-            { name: "Trend Status", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Seasonality", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Market Fit", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Urgency", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Impulse Buy", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Solution Value", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Wow Factor", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Virality", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Ad Creative", score: Math.floor(Math.random() * 10) + 1 },
-            { name: "Target Clarity", score: Math.floor(Math.random() * 10) + 1 }
-          ];
-          
-          // Calculate total score based on all individual scores
-          const totalScore = Math.min(
-            100, 
-            Math.floor(scores.reduce((sum, item) => sum + item.score, 0) / scores.length * 10)
-          );
-          
-          // Generate insights based on scores
-          const insights = generateInsights(totalScore, scores);
+        // Update progress to indicate video analysis started
+        clearInterval(progressInterval);
+        setProgress(60);
 
+        // Transform sheet data into Product format
+        const analyzedProducts: Product[] = sheetProducts.map((product, index) => {
+          // Calculate total score based on all individual scores
+          const totalScore = product.scores ? 
+            Math.min(
+              100, 
+              Math.floor(product.scores.reduce((sum, item) => sum + item.score, 0) / product.scores.length * 10)
+            ) : 50;
+          
           // Extract product name/title from URL
           const productName = extractProductName(product.productLink);
 
@@ -92,19 +83,23 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
             imageUrl: "", // This would be extracted from product page in a real implementation
             productUrl: product.productLink,
             totalScore,
-            status: 'complete',
-            scores,
-            insights
+            status: product.status || 'complete',
+            scores: product.scores || [],
+            insights: product.insights || generateInsights(totalScore, product.scores || [])
           };
         });
 
         // Final progress and complete loading
         setProgress(100);
         setProducts(analyzedProducts);
-        clearInterval(progressInterval);
-        setIsLoading(false);
         
-        toast.success(`Analyzed ${analyzedProducts.length} products successfully`);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
+        
+        toast.success(`Analyzed ${analyzedProducts.length} products successfully`, {
+          description: "Video content has been processed and products have been scored."
+        });
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Unknown error occurred');
         setIsLoading(false);
@@ -176,7 +171,10 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
           <div className="text-center space-y-2">
             <p className="font-medium">Analyzing Products from Google Sheet</p>
             <p className="text-sm text-muted-foreground">
-              Processing video creatives and evaluating market potential...
+              {progress < 30 && "Loading data from Google Sheet..."}
+              {progress >= 30 && progress < 60 && "Processing video creatives..."}
+              {progress >= 60 && progress < 90 && "Evaluating market potential..."}
+              {progress >= 90 && "Finalizing analysis..."}
             </p>
           </div>
         </div>
