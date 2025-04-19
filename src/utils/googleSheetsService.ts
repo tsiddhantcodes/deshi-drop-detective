@@ -16,22 +16,33 @@ export const fetchGoogleSheetData = async (sheetUrl: string): Promise<ProductDat
   const sheetId = sheetIdMatch[1];
 
   try {
+    console.log('Fetching data from Google Sheet:', sheetId);
+    
     // Invoke Supabase edge function to fetch Google Sheet data
     const { data, error } = await supabase.functions.invoke('fetch-google-sheet', {
       body: JSON.stringify({ sheetId })
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase function error:', error);
+      throw new Error(`Failed to fetch sheet data: ${error.message}`);
+    }
+
+    if (!data.values || data.values.length === 0) {
+      console.warn('Google Sheet is empty or has no data');
+      return [];
+    }
 
     // Validate and transform the fetched data
     const products: ProductData[] = data.values
       .slice(1) // Skip header row
-      .map(([productLink, videoCreaitiveFolderLink]) => ({
-        productLink,
-        videoCreaitiveFolderLink
+      .map(([productLink, videoCreaitiveFolderLink]: string[]) => ({
+        productLink: productLink || '',
+        videoCreaitiveFolderLink: videoCreaitiveFolderLink || ''
       }))
       .filter(product => product.productLink && product.videoCreaitiveFolderLink);
 
+    console.log(`Found ${products.length} valid products in the sheet`);
     return products;
   } catch (error) {
     console.error('Error fetching Google Sheet data:', error);
