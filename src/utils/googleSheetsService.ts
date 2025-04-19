@@ -47,7 +47,7 @@ export const fetchGoogleSheetData = async (sheetUrl: string): Promise<ProductDat
         productLink: productLink || '',
         videoCreativeFolderLink: videoCreativeFolderLink || '',
         analyzed: false,
-        status: 'analyzing'
+        status: 'analyzing' as const
       }))
       .filter(product => product.productLink && product.videoCreativeFolderLink);
 
@@ -87,7 +87,7 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
             console.error('Error analyzing video:', error);
             return {
               ...product,
-              status: 'complete',
+              status: 'complete' as const,
               analyzed: true,
               scores: generateRandomScores(), // Fallback to random if analysis fails
               insights: "Could not analyze video content. Using estimated scores."
@@ -96,7 +96,7 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
           
           return {
             ...product,
-            status: 'complete',
+            status: 'complete' as const,
             analyzed: true,
             scores: data.scores || generateRandomScores(),
             insights: data.insights || generateDefaultInsight(data.scores)
@@ -105,7 +105,7 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
           console.error('Error in video analysis:', error);
           return {
             ...product,
-            status: 'complete',
+            status: 'complete' as const,
             analyzed: true,
             scores: generateRandomScores(), // Fallback to random scores
             insights: "Error analyzing video. Using estimated scores."
@@ -128,7 +128,7 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
     // Return products with random scores as fallback
     return products.map(product => ({
       ...product,
-      status: 'complete',
+      status: 'complete' as const,
       analyzed: true,
       scores: generateRandomScores(),
       insights: "Error in analysis pipeline. Using estimated scores."
