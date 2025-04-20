@@ -99,11 +99,13 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
       const batch = products.slice(i, i + batchSize);
       const batchPromises = batch.map(async (product, index) => {
         try {
+          console.log(`Analyzing product ${i + index}: ${product.productName}`);
+          
           // Call the video analysis edge function
           const { data, error } = await supabase.functions.invoke('analyze-video-content', {
             body: JSON.stringify({
               videoUrl: product.videoCreativeFolderLink,
-              productName: product.productName, // Use product name directly
+              productName: product.productName,
               productIndex: i + index
             })
           });
@@ -145,7 +147,12 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
     }
     
     // Save the analysis results to Supabase for future reference
-    await saveAnalysisResults(analyzedProducts, sheetId);
+    try {
+      await saveAnalysisResults(analyzedProducts, sheetId);
+    } catch (error) {
+      console.error('Error saving analysis results:', error);
+      // Continue even if saving fails
+    }
     
     return analyzedProducts;
   } catch (error) {
@@ -184,25 +191,6 @@ const saveAnalysisResults = async (products: ProductData[], sheetId: string) => 
     }
   } catch (error) {
     console.error('Exception saving analysis results:', error);
-  }
-};
-
-// Helper function to extract product name from URL (fallback only)
-const extractProductName = (url: string): string => {
-  try {
-    const urlObj = new URL(url);
-    // Try to get the last meaningful part of the path
-    const pathParts = urlObj.pathname.split('/').filter(Boolean);
-    if (pathParts.length > 0) {
-      // Replace hyphens with spaces and capitalize words
-      return pathParts[pathParts.length - 1]
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase())
-        .substring(0, 30); // Limit length
-    }
-    return `Product ${Math.floor(Math.random() * 1000)}`;
-  } catch {
-    return `Product ${Math.floor(Math.random() * 1000)}`;
   }
 };
 

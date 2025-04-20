@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { videoUrl, productUrl, productIndex } = await req.json();
+    const { videoUrl, productName, productIndex } = await req.json();
     
     if (!videoUrl) {
       return new Response(
@@ -39,8 +39,8 @@ serve(async (req) => {
       console.warn("Google Cloud credentials not available, using fallback analysis");
       return new Response(
         JSON.stringify({
-          scores: generateAIBasedScores(videoUrl, productUrl, productIndex),
-          insights: generateInsights(productIndex)
+          scores: generateAIBasedScores(videoUrl, productName || "", productIndex || 0),
+          insights: generateInsights(productIndex || 0)
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -48,8 +48,8 @@ serve(async (req) => {
 
     // For this implementation, we'll use the fallback analysis
     // In a production environment, you would implement the actual Video Intelligence API call here
-    const aiBasedScores = generateAIBasedScores(videoUrl, productUrl, productIndex);
-    const insights = generateInsights(productIndex);
+    const aiBasedScores = generateAIBasedScores(videoUrl, productName || "", productIndex || 0);
+    const insights = generateInsights(productIndex || 0);
     
     return new Response(
       JSON.stringify({ 
@@ -68,9 +68,9 @@ serve(async (req) => {
 });
 
 // Generate more deterministic but still varied scores based on input parameters
-function generateAIBasedScores(videoUrl: string, productUrl: string, index: number) {
-  // Use the URL strings to generate a seed
-  const seed = (videoUrl.length * productUrl.length + index) % 100;
+function generateAIBasedScores(videoUrl: string, productName: string, index: number) {
+  // Use the URL string and product name to generate a seed
+  const seed = ((videoUrl.length * (productName.length || 1)) + index) % 100;
   
   // Generate "AI-like" scores based on the seed
   const getScore = (base: number) => {

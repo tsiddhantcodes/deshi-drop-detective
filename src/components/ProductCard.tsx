@@ -47,7 +47,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <h3 className="font-medium leading-none mb-1" title={product.name}>
                 {product.name}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 {product.status === 'analyzing' ? (
                   <span className="flex items-center">
                     <span className="animate-pulse mr-2 h-2 w-2 rounded-full bg-brand-yellow"></span>
@@ -58,7 +58,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     Score: {product.totalScore}/100
                   </Badge>
                 )}
-              </p>
+              </div>
             </div>
           </div>
         </div>
