@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { AlertCircle, FileSpreadsheet, FileDownload } from "lucide-react";
+import { AlertCircle, FileSpreadsheet, Download } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
@@ -277,7 +277,7 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
                   onClick={handleExportResults}
                   className="flex items-center gap-2"
                 >
-                  <FileDownload className="h-4 w-4" />
+                  <Download className="h-4 w-4" />
                   Export Results
                 </Button>
               </div>
