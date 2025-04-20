@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Type for the product data we'll extract from the sheet
 export interface ProductData {
+  productName: string; // Added product name field
   productLink: string;
   videoCreativeFolderLink: string;
   analyzed: boolean;
@@ -43,7 +44,8 @@ export const fetchGoogleSheetData = async (sheetUrl: string): Promise<ProductDat
     // Validate and transform the fetched data
     const products: ProductData[] = data.values
       .slice(1) // Skip header row
-      .map(([productLink, videoCreativeFolderLink]: string[]) => ({
+      .map(([productName, productLink, videoCreativeFolderLink]: string[]) => ({
+        productName: productName || '', // Use product name from sheet
         productLink: productLink || '',
         videoCreativeFolderLink: videoCreativeFolderLink || '',
         analyzed: false,
@@ -143,7 +145,7 @@ const saveAnalysisResults = async (products: ProductData[], sheetId: string) => 
       .upsert(
         products.map(product => ({
           sheet_id: sheetId,
-          name: extractProductName(product.productLink),
+          name: product.productName || extractProductName(product.productLink),
           price: null, // We don't have price information
           score: calculateTotalScore(product.scores || []),
           score_breakdown: product.scores || [],
@@ -162,7 +164,7 @@ const saveAnalysisResults = async (products: ProductData[], sheetId: string) => 
   }
 };
 
-// Helper function to extract product name from URL
+// Helper function to extract product name from URL (fallback only)
 const extractProductName = (url: string): string => {
   try {
     const urlObj = new URL(url);

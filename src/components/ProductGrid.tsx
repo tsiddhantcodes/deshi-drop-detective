@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { fetchGoogleSheetData } from "@/utils/googleSheetsService";
 import ProductCard, { Product } from "./ProductCard";
@@ -67,11 +68,10 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
               Math.floor(product.scores.reduce((sum, item) => sum + item.score, 0) / product.scores.length * 10)
             ) : 50;
           
-          const productName = extractProductName(product.productLink);
-
+          // Use product name directly from sheet data
           return {
             id: `product-${index}`,
-            name: productName,
+            name: product.productName || extractProductName(product.productLink),
             imageUrl: "",
             productUrl: product.productLink,
             totalScore,
@@ -135,6 +135,7 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
       return;
     }
 
+    // Create CSV header with product name, score category columns, and insights
     const csvRows = [
       ['Product Name', 'Total Score', ...products[0].scores.map(s => s.name), 'Insights'].join(','),
       ...products.map(product => [
