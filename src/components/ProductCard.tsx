@@ -67,7 +67,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.status === 'analyzing' ? (
           <div className="space-y-4 pt-2">
             <Progress value={45} className="h-2" />
-            <p className="text-sm text-muted-foreground">Analyzing video content...</p>
+            <p className="text-sm text-muted-foreground">Analyzing product data...</p>
           </div>
         ) : (
           <div className="space-y-4">

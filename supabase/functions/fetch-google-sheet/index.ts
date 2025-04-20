@@ -35,9 +35,9 @@ serve(async (req) => {
     console.log(`Fetching sheet data for ID: ${sheetId}`);
     
     // Fetch sheet data using the Google Sheets API
-    // We're fetching the first sheet and get columns A-C (name, link and video)
+    // We're fetching the first sheet and get columns A-B (Product Name and Creative Links)
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:C?key=${GOOGLE_API_KEY}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:B?key=${GOOGLE_API_KEY}`,
       { method: "GET" }
     );
 
@@ -51,6 +51,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("Sheet data fetched successfully. Row count:", data.values ? data.values.length : 0);
     
     // Return the sheet values
     return new Response(

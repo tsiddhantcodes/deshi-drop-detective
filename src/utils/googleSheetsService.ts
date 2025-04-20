@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Type for the product data we'll extract from the sheet
 export interface ProductData {
-  productName: string; // Added product name field
-  productLink: string;
+  productName: string;
+  productLink: string; // This will be empty in the new format
   videoCreativeFolderLink: string;
   analyzed: boolean;
   scores?: {
@@ -41,17 +41,40 @@ export const fetchGoogleSheetData = async (sheetUrl: string): Promise<ProductDat
       return [];
     }
 
-    // Validate and transform the fetched data
+    // Log the first few rows to understand the structure
+    console.log('Sheet header row:', data.values[0]);
+    if (data.values.length > 1) {
+      console.log('First data row example:', data.values[1]);
+    }
+
+    // Check if the header has the expected format
+    const headers = data.values[0].map((h: string) => h.toLowerCase());
+    const hasProductName = headers.some((h: string) => h.includes('product') && h.includes('name'));
+    const hasCreativeLinks = headers.some((h: string) => h.includes('creative') || h.includes('link'));
+
+    if (!hasProductName || !hasCreativeLinks) {
+      console.warn('Sheet format may not be correct. Expected "Product Name" and "Creative Links" columns');
+    }
+
+    // Validate and transform the fetched data - adapt for new format
+    // In new format: Column A is Product Name, Column B is Creative Links
     const products: ProductData[] = data.values
       .slice(1) // Skip header row
-      .map(([productName, productLink, videoCreativeFolderLink]: string[]) => ({
-        productName: productName || '', // Use product name from sheet
-        productLink: productLink || '',
-        videoCreativeFolderLink: videoCreativeFolderLink || '',
-        analyzed: false,
-        status: 'analyzing' as const
-      }))
-      .filter(product => product.productLink && product.videoCreativeFolderLink);
+      .map(([productName, videoCreativeFolderLink]: string[]) => {
+        // Validate both required fields are present
+        if (!productName || !videoCreativeFolderLink) {
+          return null;
+        }
+        
+        return {
+          productName: productName.trim(),
+          videoCreativeFolderLink: videoCreativeFolderLink.trim(),
+          productLink: "", // Empty in the new format since we don't have it
+          analyzed: false,
+          status: 'analyzing' as const
+        };
+      })
+      .filter(Boolean); // Remove null entries
 
     console.log(`Found ${products.length} valid products in the sheet`);
     
@@ -80,7 +103,7 @@ export const analyzeProductVideos = async (products: ProductData[], sheetId: str
           const { data, error } = await supabase.functions.invoke('analyze-video-content', {
             body: JSON.stringify({
               videoUrl: product.videoCreativeFolderLink,
-              productUrl: product.productLink,
+              productName: product.productName, // Use product name directly
               productIndex: i + index
             })
           });
@@ -145,7 +168,7 @@ const saveAnalysisResults = async (products: ProductData[], sheetId: string) => 
       .upsert(
         products.map(product => ({
           sheet_id: sheetId,
-          name: product.productName || extractProductName(product.productLink),
+          name: product.productName, // Always use the product name from sheet
           price: null, // We don't have price information
           score: calculateTotalScore(product.scores || []),
           score_breakdown: product.scores || [],

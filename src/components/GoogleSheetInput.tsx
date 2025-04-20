@@ -56,7 +56,7 @@ export default function GoogleSheetInput({ onAnalyze }: { onAnalyze: (sheetUrl: 
       <CardHeader>
         <CardTitle>Product Analysis</CardTitle>
         <CardDescription>
-          Enter your Google Sheet URL containing product links and video creative folders
+          Enter your Google Sheet URL containing product data for analysis
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -67,8 +67,8 @@ export default function GoogleSheetInput({ onAnalyze }: { onAnalyze: (sheetUrl: 
             <AlertDescription>
               Your Google Sheet must have:
               <ul className="list-disc pl-5 pt-2">
-                <li>Column A: Product link</li>
-                <li>Column B: Google Drive folder link with video creatives</li>
+                <li>Column A: Product Name</li>
+                <li>Column B: Creative Links (Google Drive folder links)</li>
                 <li>First row should be headers</li>
               </ul>
             </AlertDescription>

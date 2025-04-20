@@ -46,13 +46,13 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
         }, 150);
 
         toast.info("Analyzing products from Google Sheet", {
-          description: "This may take a minute as we analyze the video content."
+          description: "This may take a minute as we analyze the product data."
         });
 
         const sheetProducts = await fetchGoogleSheetData(sheetUrl);
         
         if (sheetProducts.length === 0) {
-          setError("No valid products found in the Google Sheet. Please check the sheet format.");
+          setError("No valid products found in the Google Sheet. Please check that your sheet has 'Product Name' and 'Creative Links' columns, with product names in column A and creative links in column B.");
           clearInterval(progressInterval);
           setIsLoading(false);
           return;
@@ -68,12 +68,12 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
               Math.floor(product.scores.reduce((sum, item) => sum + item.score, 0) / product.scores.length * 10)
             ) : 50;
           
-          // Use product name directly from sheet data
+          // Always use the product name from the sheet
           return {
             id: `product-${index}`,
-            name: product.productName || extractProductName(product.productLink),
+            name: product.productName,
             imageUrl: "",
-            productUrl: product.productLink,
+            productUrl: product.productLink || product.videoCreativeFolderLink, // Fallback to video link if no product URL
             totalScore,
             status: product.status || 'complete',
             scores: product.scores || [],
@@ -89,7 +89,7 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
         }, 500);
         
         toast.success(`Analyzed ${analyzedProducts.length} products successfully`, {
-          description: "Video content has been processed and products have been scored."
+          description: "Products have been processed and scored based on our AI analysis."
         });
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Unknown error occurred');
@@ -102,22 +102,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
 
     loadProductData();
   }, [sheetUrl]);
-
-  const extractProductName = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split('/').filter(Boolean);
-      if (pathParts.length > 0) {
-        return pathParts[pathParts.length - 1]
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase())
-          .substring(0, 30);
-      }
-      return `Product ${Math.floor(Math.random() * 1000)}`;
-    } catch {
-      return `Product ${Math.floor(Math.random() * 1000)}`;
-    }
-  };
 
   const generateInsights = (totalScore: number, scores: {name: string, score: number}[]): string => {
     if (totalScore >= 80) {
@@ -186,7 +170,7 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
             <p className="font-medium">Analyzing Products from Google Sheet</p>
             <p className="text-sm text-muted-foreground">
               {progress < 30 && "Loading data from Google Sheet..."}
-              {progress >= 30 && progress < 60 && "Processing video creatives..."}
+              {progress >= 30 && progress < 60 && "Processing product data..."}
               {progress >= 60 && progress < 90 && "Evaluating market potential..."}
               {progress >= 90 && "Finalizing analysis..."}
             </p>
