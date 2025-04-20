@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { fetchGoogleSheetData } from "@/utils/googleSheetsService";
 import ProductCard, { Product } from "./ProductCard";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { AlertCircle, FileSpreadsheet } from "lucide-react";
+import { AlertCircle, FileSpreadsheet, FileDownload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
@@ -27,7 +26,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
   const [sortOption, setSortOption] = useState("highest");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch and process Google Sheet data
   useEffect(() => {
     const loadProductData = async () => {
       try {
@@ -35,7 +33,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
         setError(null);
         setProgress(0);
 
-        // Simulate initial progress
         const progressInterval = setInterval(() => {
           setProgress(prev => {
             const newProgress = prev + 2;
@@ -51,7 +48,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
           description: "This may take a minute as we analyze the video content."
         });
 
-        // Fetch sheet data and analyze videos
         const sheetProducts = await fetchGoogleSheetData(sheetUrl);
         
         if (sheetProducts.length === 0) {
@@ -61,26 +57,22 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
           return;
         }
 
-        // Update progress to indicate video analysis started
         clearInterval(progressInterval);
         setProgress(60);
 
-        // Transform sheet data into Product format
         const analyzedProducts: Product[] = sheetProducts.map((product, index) => {
-          // Calculate total score based on all individual scores
           const totalScore = product.scores ? 
             Math.min(
               100, 
               Math.floor(product.scores.reduce((sum, item) => sum + item.score, 0) / product.scores.length * 10)
             ) : 50;
           
-          // Extract product name/title from URL
           const productName = extractProductName(product.productLink);
 
           return {
             id: `product-${index}`,
             name: productName,
-            imageUrl: "", // This would be extracted from product page in a real implementation
+            imageUrl: "",
             productUrl: product.productLink,
             totalScore,
             status: product.status || 'complete',
@@ -89,7 +81,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
           };
         });
 
-        // Final progress and complete loading
         setProgress(100);
         setProducts(analyzedProducts);
         
@@ -112,18 +103,15 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
     loadProductData();
   }, [sheetUrl]);
 
-  // Helper function to extract product name from URL
   const extractProductName = (url: string): string => {
     try {
       const urlObj = new URL(url);
-      // Try to get the last meaningful part of the path
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
       if (pathParts.length > 0) {
-        // Replace hyphens with spaces and capitalize words
         return pathParts[pathParts.length - 1]
           .replace(/-/g, ' ')
           .replace(/\b\w/g, l => l.toUpperCase())
-          .substring(0, 30); // Limit length
+          .substring(0, 30);
       }
       return `Product ${Math.floor(Math.random() * 1000)}`;
     } catch {
@@ -131,7 +119,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
     }
   };
 
-  // Helper function to generate insights based on scores
   const generateInsights = (totalScore: number, scores: {name: string, score: number}[]): string => {
     if (totalScore >= 80) {
       return "This product has excellent potential for the Indian market with strong trend status and market fit.";
@@ -142,7 +129,34 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
     }
   };
 
-  // Filtering and sorting logic
+  const handleExportResults = () => {
+    if (products.length === 0) {
+      toast.error("No products to export");
+      return;
+    }
+
+    const csvRows = [
+      ['Product Name', 'Total Score', ...products[0].scores.map(s => s.name), 'Insights'].join(','),
+      ...products.map(product => [
+        `"${product.name}"`,
+        product.totalScore,
+        ...product.scores.map(s => s.score),
+        `"${product.insights}"`
+      ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'product_analysis_results.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Export completed successfully");
+  };
+
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -156,7 +170,6 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
     return 0;
   });
 
-  // Pagination logic
   const totalPages = Math.ceil(sortedProducts.length / ITEMS_PER_PAGE);
   const currentProducts = sortedProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -259,7 +272,14 @@ export default function ProductGrid({ sheetUrl }: ProductGridProps) {
               )}
               
               <div className="mt-8 flex justify-center">
-                <Button variant="outline">Export Results</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportResults}
+                  className="flex items-center gap-2"
+                >
+                  <FileDownload className="h-4 w-4" />
+                  Export Results
+                </Button>
               </div>
             </>
           )}

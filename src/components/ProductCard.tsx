@@ -2,7 +2,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export interface ProductScore {
@@ -45,10 +44,10 @@ export default function ProductCard({ product }: { product: Product }) {
               {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="object-cover w-full h-full" />}
             </div>
             <div>
-              <h3 className="font-medium leading-none truncate max-w-[200px]" title={product.name}>
+              <h3 className="font-medium leading-none mb-1" title={product.name}>
                 {product.name}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground">
                 {product.status === 'analyzing' ? (
                   <span className="flex items-center">
                     <span className="animate-pulse mr-2 h-2 w-2 rounded-full bg-brand-yellow"></span>
@@ -94,17 +93,6 @@ export default function ProductCard({ product }: { product: Product }) {
             <div>
               <h4 className="text-sm font-medium mb-1">Insights:</h4>
               <p className="text-xs text-muted-foreground">{product.insights}</p>
-            </div>
-            
-            <div className="flex justify-between">
-              <Button variant="outline" size="sm" className="text-xs" asChild>
-                <a href={product.productUrl} target="_blank" rel="noopener noreferrer">
-                  View Product
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" className="text-xs">
-                Details
-              </Button>
             </div>
           </div>
         )}
